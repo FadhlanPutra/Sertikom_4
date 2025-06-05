@@ -18,10 +18,6 @@ class mood extends Model
         'date',
     ];
 
-    protected $attributes = [
-        'status' => "Pending",
-    ];
-
     protected $casts = [
         'date' => 'date',
     ];

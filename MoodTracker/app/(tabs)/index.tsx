@@ -34,7 +34,7 @@ export default function Index() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [error, setError] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isPressedRef = useRef(false);
   const colorScheme = useColorScheme();
@@ -55,7 +55,7 @@ export default function Index() {
 
   const getMoods = async () => {
     try {
-      setIsLoading(true);
+      setIsLoading(true)
       const response = await axios.get(`${API_URL}/api/mood?apiKey=${API_KEY}`);
       const formattedMoods = response.data.map((item: MoodProps) => ({
         ...item,
@@ -63,7 +63,9 @@ export default function Index() {
       }));
       setMood(formattedMoods);
       setFilteredMood(formattedMoods);
+      setIsLoading(false);
     } catch (error) {
+      setIsLoading(false);
       console.error(error);
       setError('Gagal memuat data');
     } finally {
@@ -428,7 +430,7 @@ export default function Index() {
             buttonColor={editingId ? '#f97316' : colorScheme === 'dark' ? '#3b82f6' : '#2563eb'}
             style={tw`mt-2 rounded-lg`}
             contentStyle={tw`py-2`}
-            disabled={title.length < 3 || !title || !category || !date || isPressedRef.current}
+            disabled={title.length < 3 || title.length > 255 || !title || !category || !date || isPressedRef.current || new Date(date) < new Date()}
             theme={{
               colors: {
                 onSurface: colorScheme === 'dark' ? '#fff' : '#000',
@@ -562,6 +564,33 @@ export default function Index() {
                         ]}
                       >
                         {item.status}
+                      </Text>
+                      <Text
+                        style={[
+                          tw`text-xs ml-2`,
+                          { color: colorScheme === 'dark' ? '#aaa' : '#6b7280' },
+                          item.status === 'Completed' && { textDecorationLine: 'line-through', color: '#a3a3a3' },
+                        ]}
+                      >
+                        {(() => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const itemDate = new Date(item.date);
+                          itemDate.setHours(0, 0, 0, 0);
+
+                          const diffTime = itemDate.getTime() - today.getTime();
+                          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+                          if (diffDays === 0) {
+                            return "Hari Ini";
+                          } else if (diffDays === 1) {
+                            return "Besok";
+                          } else if (diffDays === -1) {
+                            return "Kemarin";
+                          } else {
+                            return ""; // Atau tampilkan tanggal aslinya jika bukan hari ini/kemarin/besok
+                          }
+                        })()}
                       </Text>
                     </View>
                   </View>

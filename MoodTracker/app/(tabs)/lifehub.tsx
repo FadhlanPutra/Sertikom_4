@@ -34,7 +34,7 @@ export default function LifeHub() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [error, setError] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isPressedRef = useRef(false);
   const colorScheme = useColorScheme();
@@ -55,7 +55,7 @@ export default function LifeHub() {
 
   const getLifes = async () => {
     try {
-      setIsLoading(true);
+      setIsLoading(true)
       const response = await axios.get(`${API_URL}/api/life?apiKey=${API_KEY}`);
       const formattedLifes = response.data.map((item: LifeProps) => ({
         ...item,
@@ -63,7 +63,9 @@ export default function LifeHub() {
       }));
       setLife(formattedLifes);
       setFilteredLife(formattedLifes);
+      setIsLoading(false);
     } catch (error) {
+      setIsLoading(false);
       console.error(error);
       setError('Gagal memuat data');
     } finally {
@@ -92,7 +94,7 @@ export default function LifeHub() {
 
   const addOrEditLife = async () => {
     if (isPressedRef.current) return;
-
+    
     isPressedRef.current = true;
 
     try {
@@ -428,7 +430,7 @@ export default function LifeHub() {
             buttonColor={editingId ? '#f97316' : colorScheme === 'dark' ? '#3b82f6' : '#2563eb'}
             style={tw`mt-2 rounded-lg`}
             contentStyle={tw`py-2`}
-            disabled={title.length < 3 || !title || !category || !date || isPressedRef.current}
+            disabled={title.length < 3 || title.length > 255 || !title || !category || !date || isPressedRef.current || new Date(date) < new Date()}
             theme={{
               colors: {
                 onSurface: colorScheme === 'dark' ? '#fff' : '#000',
