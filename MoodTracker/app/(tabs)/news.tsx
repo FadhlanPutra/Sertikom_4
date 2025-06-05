@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Linking, TouchableOpacity, Image, RefreshControl, TextInput } from 'react-native';
+import { View, Text, FlatList, Linking, TouchableOpacity, Image, RefreshControl, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -6,9 +6,14 @@ import tw from 'twrnc';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '@/constants/Colors';
+import Icon from '@expo/vector-icons/Ionicons';
 
 export default function Explore() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
 
   type ArticleProps = {
     source: {
@@ -24,20 +29,39 @@ export default function Explore() {
     content: string;
   };
 
-  const API_URL = "https://newsapi.org/v2/top-headlines?sources=bbc-news&apiKey=45e121fe5c4f4a6bb7be1c2199bb09bf";
+  const API_KEY = '45e121fe5c4f4a6bb7be1c2199bb09bf';
+  const BASE_URL = 'https://newsapi.org/v2/top-headlines';
+
+  const categories = [
+    { label: 'All', value: '' },
+    { label: 'Business', value: 'business' },
+    { label: 'Entertainment', value: 'entertainment' },
+    { label: 'General', value: 'general' },
+    { label: 'Health', value: 'health' },
+    { label: 'Science', value: 'science' },
+    { label: 'Sports', value: 'sports' },
+    { label: 'Technology', value: 'technology' },
+  ];
 
   const [articles, setArticles] = useState<ArticleProps[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  // const [filteredNews, setFilteredNews] = useState<ArticleProps[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const getArticles = async () => {
+  const getArticles = async (category = selectedCategory, query = searchQuery) => {
+    setIsLoading(true);
     try {
-      const response = await axios.get(`${API_URL}`);
+      let url = `${BASE_URL}?country=us&apiKey=${API_KEY}`;
+      if (category) url += `&category=${category}`;
+      if (query) url += `&q=${encodeURIComponent(query)}`;
+      const response = await axios.get(url);
       setArticles(response.data.articles);
     } catch (error) {
+      setArticles([]);
       console.error(error);
     } finally {
+      setIsLoading(false);
       setIsRefreshing(false);
     }
   };
@@ -45,35 +69,11 @@ export default function Explore() {
   const onRefresh = useCallback(() => {
     setIsRefreshing(true);
     getArticles();
-  }, []);
-
-    // Fungsi untuk memfilter games berdasarkan kategori dan pencarian
-  const filteredNewsSearch = (query: string) => {
-
-    let filtered = articles;
-
-    // Filter berdasarkan pencarian
-    if (query) {
-      setIsRefreshing(true);
-      filtered = filtered.filter(articles =>
-        articles.title.toLowerCase().includes(query.toLowerCase()),
-        setIsRefreshing(false)
-      );
-    } else {
-      getArticles();
-    }
-    
-    setArticles(filtered);
-  };
-
-  // Tambahkan useEffect untuk memantau perubahan searchQuery
-  useEffect(() => {
-    filteredNewsSearch(searchQuery);
-  }, [searchQuery]);
+  }, [selectedCategory, searchQuery]);
 
   useEffect(() => {
     getArticles();
-  }, []);
+  }, [selectedCategory, searchQuery]);
 
   const handleArticlePress = (article: ArticleProps) => {
     router.push({
@@ -83,64 +83,107 @@ export default function Explore() {
   };
 
   return (
-    <GestureHandlerRootView style={tw`flex-1 bg-gray-50`}>
+    <GestureHandlerRootView style={[tw`flex-1`, { backgroundColor: themeColors.background }]}> 
       <SafeAreaView style={tw`flex-1`}>
-        <LinearGradient
-          colors={['#4c669f', '#3b5998', '#192f6a']}
-          style={tw`absolute w-full h-40`}
-        />
-        <View style={tw`flex-1 p-4`}>
-          <Text style={tw`text-2xl font-bold mb-4 text-white`}>Articles</Text>
-          {/* Search Section */}
-          <View style={tw`mb-4`}>
-            <TextInput
-              style={tw`bg-white p-3 rounded-lg border border-gray-200`}
-              placeholder="Cari game..."
-              value={searchQuery}
-              onChangeText={(text) => setSearchQuery(text)}
-            />
-          </View>
-          <FlatList
-            data={articles}
-            keyExtractor={(item) => item.url}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={onRefresh}
-                colors={['#ffffff']}
-                tintColor="#ffffff"
-              />
-            }
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={tw`bg-white/95 rounded-xl shadow-md p-4 mb-4`}
-                onPress={() => handleArticlePress(item)}
-              >
-                {item.urlToImage && (
-                  <Image
-                    source={{ uri: item.urlToImage }}
-                    style={tw`h-40 w-full rounded-md mb-2`}
-                    resizeMode="cover"
-                  />
-                )}
-                <Text style={tw`text-lg font-semibold text-gray-900`}>
-                  {item.title}
-                </Text>
-                {item.author && (
-                  <Text style={tw`text-gray-600 italic`}>By: {item.author}</Text>
-                )}
-                {item.publishedAt && (
-                  <Text style={tw`text-gray-600 italic`}>On: {new Date(item.publishedAt).toLocaleDateString()}</Text>
-                )}
-                {item.description && (
-                  <Text style={tw`text-gray-600 mt-2`} numberOfLines={2}>
-                    {item.description}
+        <View style={tw`flex-row items-center justify-between px-4 pt-4 mb-2`}>
+          <Text style={[tw`text-2xl font-bold`, { color: themeColors.text }]}>News</Text>
+        </View>
+        {/* Filter Kategori */}
+        <View style={tw`px-4 mb-4`}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`px-4 mb-2`}>
+            <View style={tw`flex-row gap-2`}>
+              {categories.map((cat) => (
+                <TouchableOpacity
+                key={cat.value}
+                onPress={() => setSelectedCategory(cat.value)}
+                style={[
+                  { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20, marginRight: 8, borderWidth: selectedCategory === cat.value ? 0 : 1, borderColor: colorScheme === 'dark' ? '#333' : '#e5e7eb', backgroundColor: selectedCategory === cat.value ? themeColors.tint : (colorScheme === 'dark' ? '#23272b' : '#fff'), minWidth: 60, alignItems: 'center', justifyContent: 'center' }
+                ]}
+                >
+                  <Text style={selectedCategory === cat.value
+                    ? [tw`font-medium`, { color: '#fff', fontSize: 15 }]
+                    : [{ color: themeColors.text, fontSize: 15 }]
+                  }>
+                    {cat.label}
                   </Text>
-                )}
-                <Text style={tw`text-blue-500 mt-2`}>Baca Selengkapnya</Text>
-              </TouchableOpacity>
-            )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+        {/* Search Section */}
+        <View style={tw`px-4 mb-2`}>
+          <TextInput
+            style={[tw`rounded-lg border px-4 py-2`, { backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff', borderColor: colorScheme === 'dark' ? '#333' : '#e5e7eb', color: themeColors.text }]}
+            placeholder="Cari berita..."
+            placeholderTextColor={colorScheme === 'dark' ? '#aaa' : '#888'}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            // mode="flat"
           />
+        </View>
+        <View style={tw`flex-1 px-2 pb-2`}> 
+          {isLoading ? (
+            <View style={tw`flex-1 justify-center items-center`}>
+              <ActivityIndicator size="large" color={themeColors.tint} />
+              <Text style={[tw`mt-2`, { color: themeColors.text }]}>Memuat berita...</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={articles}
+              keyExtractor={(item) => item.url}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={onRefresh}
+                  colors={[themeColors.tint]}
+                  tintColor={themeColors.tint}
+                />
+              }
+              renderItem={({ item, index }) => (
+                <TouchableOpacity
+                  style={[tw`flex-row rounded-2xl mb-4 bg-white shadow-md`, { backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff' }]}
+                  onPress={() => handleArticlePress(item)}
+                  activeOpacity={0.9}
+                >
+                  {item.urlToImage ? (
+                    <Image
+                      source={{ uri: item.urlToImage }}
+                      style={tw`h-24 w-24 rounded-xl m-3`}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={[tw`h-24 w-24 rounded-xl m-3 bg-gray-200 justify-center items-center`, { backgroundColor: colorScheme === 'dark' ? '#333' : '#e5e7eb' }]}/>
+                  )}
+                  <View style={tw`flex-1 py-3 pr-3 justify-between`}>
+                    <View>
+                      {/* Badge */}
+                      {index % 3 === 0 && (
+                        <View style={[tw`self-start px-3 py-1 rounded-full mb-1`, { backgroundColor: '#7c3aed' }]}> 
+                          <Text style={tw`text-xs text-white font-bold`}>New Article</Text>
+                        </View>
+                      )}
+                      {index % 3 === 1 && (
+                        <View style={[tw`self-start px-3 py-1 rounded-full mb-1`, { backgroundColor: '#f97316' }]}> 
+                          <Text style={tw`text-xs text-white font-bold`}>Popular Read</Text>
+                        </View>
+                      )}
+                      <Text style={[tw`text-base font-semibold mb-1`, { color: themeColors.text }]} numberOfLines={2}>{item.title}</Text>
+                    </View>
+                    <TouchableOpacity style={tw`mt-2 flex-row items-center`} onPress={() => handleArticlePress(item)}>
+                      <Text style={[tw`text-sm font-medium`, { color: themeColors.tint }]}>Read more</Text>
+                      <Icon name="chevron-forward" size={16} color={themeColors.tint} style={tw`ml-1`} />
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={() => (
+                <View style={tw`flex-1 justify-center items-center py-12`}>
+                  <Text style={[tw`text-lg`, { color: themeColors.text }]}>Tidak ada berita ditemukan</Text>
+                </View>
+              )}
+            />
+          )}
         </View>
       </SafeAreaView>
     </GestureHandlerRootView>

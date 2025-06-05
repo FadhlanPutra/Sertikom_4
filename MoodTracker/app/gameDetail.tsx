@@ -1,22 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Image, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import tw from 'twrnc';
 import { useSearchParams } from 'expo-router/build/hooks';
 import { useNavigation } from 'expo-router';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '@/constants/Colors';
+import Icon from 'react-native-vector-icons/Ionicons';
 
-export default function GameDetail({ route }: any) {
+export default function GameDetail() {
   const params = useSearchParams();
   const id = params.get('id');
   const navigation = useNavigation();
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
 
   const title = params.get('title') || "Detail Game";
 
   useEffect(() => {
     navigation.setOptions({ title: `Game Detail - ${title}` });
   }, [navigation, title]);
-
 
   const [detail, setDetail] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -57,9 +61,9 @@ export default function GameDetail({ route }: any) {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <View style={tw`flex-1 justify-center items-center`}>
-          <ActivityIndicator size="large" color={tw.color('blue-500')} />
-          <Text style={tw`mt-2 text-gray-600`}>Loading game details...</Text>
+        <View style={[tw`flex-1 justify-center items-center`, { backgroundColor: themeColors.background }]}> 
+          <ActivityIndicator size="large" color={themeColors.tint} />
+          <Text style={[tw`mt-2`, { color: themeColors.text }]}>Loading game details...</Text>
         </View>
       );
     }
@@ -67,7 +71,7 @@ export default function GameDetail({ route }: any) {
     if (error) {
       return (
         <View style={tw`flex-1 justify-center items-center p-4`}>
-          <Text style={tw`text-red-600 text-lg text-center`}>Error: {error}</Text>
+          <Text style={tw`text-red-600 text-lg text-center`}>{error}</Text>
           <TouchableOpacity
             style={tw`mt-4 bg-blue-500 p-3 rounded-lg`}
             onPress={getGameDetail} // Allow user to retry fetching
@@ -80,8 +84,8 @@ export default function GameDetail({ route }: any) {
 
     if (!detail) {
       return (
-        <View style={tw`flex-1 justify-center items-center p-4`}>
-          <Text style={tw`text-gray-600 text-lg text-center`}>Game details not found.</Text>
+        <View style={[tw`flex-1 justify-center items-center p-4`, { backgroundColor: themeColors.background }]}> 
+          <Text style={[tw`text-gray-600 text-lg text-center`, { color: themeColors.text }]}>Game details not found.</Text>
           <TouchableOpacity
             style={tw`mt-4 bg-blue-500 p-3 rounded-lg`}
             onPress={getGameDetail} // Allow user to retry fetching
@@ -93,28 +97,63 @@ export default function GameDetail({ route }: any) {
     }
 
     return (
-      <ScrollView style={tw`p-4`}>
+      <ScrollView style={tw`flex-1`} contentContainerStyle={tw`p-4`}> 
         {/* Display game thumbnail, with a fallback image if uri is not available */}
-        <Image
-          source={{ uri: detail.thumbnail || 'https://placehold.co/600x400/cccccc/333333?text=No+Image' }}
-          style={tw`w-full h-35% rounded-lg mb-4`}
-          resizeMode="contain"
-          onError={(e) => console.log('Image loading error:', e.nativeEvent.error)}
-        />
-        <Text style={tw`text-2xl font-bold text-gray-900 mb-2`}>{detail.title}</Text>
-        <Text style={tw`text-sm text-gray-600 mb-4`}>{detail.short_description}</Text>
-        <Text style={tw`text-lg text-gray-800 mb-2`}>Platform: {detail.platform}</Text>
-        <Text style={tw`text-lg text-gray-800 mb-2`}>Genre: {detail.genre}</Text>
-        <Text style={tw`text-lg text-gray-800 mb-2`}>Developer: {detail.developer}</Text>
-        <Text style={tw`text-lg text-gray-800 mb-2`}>Release Date: {detail.release_date}</Text>
-        <Text style={tw`text-base text-gray-700 mt-4`}>{detail.description}</Text>
+        {detail.thumbnail ? (
+          <Image
+            source={{ uri: detail.thumbnail }}
+            style={tw`w-full h-60 rounded-lg mb-4`} 
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[tw`w-full h-60 rounded-lg mb-4 bg-gray-200 justify-center items-center`, { backgroundColor: colorScheme === 'dark' ? '#333' : '#e5e7eb' }]}/>
+        )}
+        <View style={[tw`rounded-xl p-4 shadow-md`, { backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff', elevation: 2 }]}> 
+          <Text style={[tw`text-2xl font-bold mb-2`, { color: themeColors.text }]}>{detail.title}</Text>
+          <Text style={[tw`text-sm mb-4`, { color: colorScheme === 'dark' ? '#aaa' : '#6b7280' }]}>{detail.short_description}</Text>
+          
+          <View style={tw`mt-4 pt-4 border-t border-gray-200`}>
+            <Text style={[tw`text-lg font-semibold mb-2`, { color: themeColors.text }]}>Details:</Text>
+            <View style={tw`mb-2`}>
+              <Text style={[tw`text-base`, { color: colorScheme === 'dark' ? '#ccc' : '#555' }]}><Text style={tw`font-medium`}>Platform:</Text> {detail.platform}</Text>
+            </View>
+            <View style={tw`mb-2`}>
+              <Text style={[tw`text-base`, { color: colorScheme === 'dark' ? '#ccc' : '#555' }]}><Text style={tw`font-medium`}>Genre:</Text> {detail.genre}</Text>
+            </View>
+            <View style={tw`mb-2`}>
+              <Text style={[tw`text-base`, { color: colorScheme === 'dark' ? '#ccc' : '#555' }]}><Text style={tw`font-medium`}>Developer:</Text> {detail.developer}</Text>
+            </View>
+             <View>
+              <Text style={[tw`text-base`, { color: colorScheme === 'dark' ? '#ccc' : '#555' }]}><Text style={tw`font-medium`}>Release Date:</Text> {detail.release_date}</Text>
+            </View>
+          </View>
+
+          {detail.description && (
+            <View style={tw`mt-6 pt-4 border-t border-gray-200`}>
+              <Text style={[tw`text-lg font-semibold mb-2`, { color: themeColors.text }]}>Description:</Text>
+              <Text style={[tw`text-base leading-6`, { color: colorScheme === 'dark' ? '#ccc' : '#555' }]}>{detail.description}</Text>
+            </View>
+          )}
+          
+          {detail.game_url && (
+            <TouchableOpacity
+              onPress={() => Linking.openURL(detail.game_url)}
+              style={[tw`mt-6 py-3 px-4 rounded-lg flex-row items-center justify-center shadow-md`, { backgroundColor: themeColors.tint, elevation: 2 }]}>
+              <Icon name="game-controller-outline" size={20} color="white" style={tw`mr-2`} />
+              <Text style={tw`text-white font-medium text-center text-base`}>
+                Play Game
+              </Text>
+            </TouchableOpacity>
+          )}
+
+        </View>
       </ScrollView>
     );
   };
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-gray-100`}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: themeColors.background }]}> 
       {renderContent()}
     </SafeAreaView>
   );
-}
+};

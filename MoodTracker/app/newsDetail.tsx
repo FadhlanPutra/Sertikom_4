@@ -5,6 +5,8 @@ import tw from 'twrnc';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '@/constants/Colors';
 
 type ArticleProps = {
   source: {
@@ -25,6 +27,8 @@ export default function NewsDetail() {
   const params = useLocalSearchParams();
   const [article, setArticle] = useState<ArticleProps | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   
   useEffect(() => {
     if (params.article) {
@@ -50,26 +54,22 @@ export default function NewsDetail() {
 
   if (isLoading) {
     return (
-      <View style={tw`flex-1 justify-center items-center bg-gray-50`}>
-        <ActivityIndicator size="large" color="#3b5998" />
+      <View style={[tw`flex-1 justify-center items-center`, { backgroundColor: themeColors.background }]}>
+        <ActivityIndicator size="large" color={themeColors.tint} />
       </View>
     );
   }
 
   if (!article) {
     return (
-      <View style={tw`flex-1 justify-center items-center bg-gray-50`}>
-        <Text style={tw`text-gray-600`}>Artikel tidak ditemukan</Text>
+      <View style={[tw`flex-1 justify-center items-center`, { backgroundColor: themeColors.background }]}>
+        <Text style={[tw`text-lg`, { color: themeColors.text }]}>Artikel tidak ditemukan</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-gray-50`}>
-      <LinearGradient
-        colors={['#4c669f', '#3b5998', '#192f6a']}
-        style={tw`absolute w-full h-40`}
-      />
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: themeColors.background }]}>
       <ScrollView style={tw`flex-1`}>
         <View style={tw`p-4`}>
           {article.urlToImage && (
@@ -80,22 +80,22 @@ export default function NewsDetail() {
             />
           )}
 
-          <View style={tw`bg-white rounded-xl p-4 shadow-md`}>
-            <Text style={tw`text-2xl font-bold text-gray-900 mb-2`}>
+          <View style={[tw`rounded-xl p-4 shadow-md`, { backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff', elevation: 2 }]}>
+            <Text style={[tw`text-2xl font-bold mb-2`, { color: themeColors.text }]}>
               {article.title}
             </Text>
 
             <View style={tw`flex-row items-center mb-4`}>
               {article.author && (
                 <View style={tw`flex-row items-center mr-4`}>
-                  <Icon name="person" size={16} color="#666" />
-                  <Text style={tw`text-gray-600 ml-1`}>{article.author}</Text>
+                  <Icon name="person" size={16} color={colorScheme === 'dark' ? '#aaa' : '#666'} />
+                  <Text style={[tw`ml-1 text-sm`, { color: colorScheme === 'dark' ? '#aaa' : '#666' }]}>{article.author}</Text>
                 </View>
               )}
               {article.publishedAt && (
                 <View style={tw`flex-row items-center`}>
-                  <Icon name="time" size={16} color="#666" />
-                  <Text style={tw`text-gray-600 ml-1`}>
+                  <Icon name="time" size={16} color={colorScheme === 'dark' ? '#aaa' : '#666'} />
+                  <Text style={[tw`ml-1 text-sm`, { color: colorScheme === 'dark' ? '#aaa' : '#666' }]}>
                     {new Date(article.publishedAt).toLocaleDateString()}
                   </Text>
                 </View>
@@ -103,28 +103,28 @@ export default function NewsDetail() {
             </View>
 
             {article.description && (
-              <Text style={tw`text-gray-700 text-lg mb-4`}>
+              <Text style={[tw`text-lg mb-4`, { color: themeColors.text }]}>
                 {article.description}
               </Text>
             )}
 
             {article.content && (
-              <Text style={tw`text-gray-600 leading-6`}>
+              <Text style={[tw`leading-6`, { color: colorScheme === 'dark' ? '#ccc' : '#555' }]}>
                 {article.content.replace(/\[\+\d+ chars\]$/, '')}
               </Text>
             )}
 
             <View style={tw`mt-6 pt-4 border-t border-gray-200`}>
-              <Text style={tw`text-gray-500 text-sm mb-4`}>
+              <Text style={[tw`text-sm mb-4`, { color: colorScheme === 'dark' ? '#aaa' : '#6b7280' }]}>
                 Source: {article.source.name}
               </Text>
               
               <TouchableOpacity
                 onPress={handleOpenWebsite}
-                style={tw`bg-blue-500 py-3 px-4 rounded-lg flex-row items-center justify-center`}
+                style={[tw`py-3 px-4 rounded-lg flex-row items-center justify-center shadow-md`, { backgroundColor: themeColors.tint, elevation: 2 }]}
               >
                 <Icon name="globe-outline" size={20} color="white" style={tw`mr-2`} />
-                <Text style={tw`text-white font-medium text-center`}>
+                <Text style={tw`text-white font-medium text-center text-base`}>
                   Buka di Website
                 </Text>
               </TouchableOpacity>

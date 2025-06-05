@@ -1,4 +1,4 @@
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, ScrollView, TextInput, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, ScrollView, TextInput, RefreshControl, Image } from 'react-native';
 import React, { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
@@ -6,6 +6,9 @@ import tw from 'twrnc';
 import { useNavigation } from '@react-navigation/native';
 import { router, useRouter } from 'expo-router';
 import RNPickerSelect from 'react-native-picker-select';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '@/constants/Colors';
+import Icon from '@expo/vector-icons/Ionicons';
 
 export default function Games() {
   // Define the type for a single game object
@@ -20,234 +23,113 @@ export default function Games() {
   };
 
   // API URL for fetching free games
-  const API_URL = "https://www.freetogame.com/api";
+  let API_URL = "https://www.freetogame.com/api/games";
 
-  // State to store the list of games
-  const [games, setGames] = useState<GamesProps[]>([]);
-  const [filteredGames, setFilteredGames] = useState<GamesProps[]>([]);
-  // State to manage loading status
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  // State to manage error messages
-  const [error, setError] = useState<string | null>(null);
-  // State untuk filter dan sort
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedSort, setSelectedSort] = useState<string>('');
-  const [useApiFilter, setUseApiFilter] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [page, setPage] = useState<number>(1);
-  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
-  const [hasMoreData, setHasMoreData] = useState<boolean>(true);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const ITEMS_PER_PAGE = 10;
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
 
-  // Kategori games
+  // Kategori games (chip horizontal)
   const categories = [
-    { label: 'Semua Kategori', value: '' },
+    { label: 'All', value: '' },
     { label: 'MMORPG', value: 'mmorpg' },
     { label: 'Shooter', value: 'shooter' },
     { label: 'Strategy', value: 'strategy' },
     { label: 'MOBA', value: 'moba' },
     { label: 'Racing', value: 'racing' },
     { label: 'Sports', value: 'sports' },
-    { label: 'Social', value: 'social' },
-    { label: 'Sandbox', value: 'sandbox' },
-    { label: 'Open World', value: 'open-world' },
     { label: 'Survival', value: 'survival' },
-    { label: 'PVP', value: 'pvp' },
-    { label: 'PVE', value: 'pve' },
-    { label: 'Pixel', value: 'pixel' },
-    { label: 'Voxel', value: 'voxel' },
-    { label: 'Zombie', value: 'zombie' },
-    { label: 'Turn Based', value: 'turn-based' },
-    { label: 'First Person', value: 'first-person' },
-    { label: 'Third Person', value: 'third-Person' },
-    { label: 'Top Down', value: 'top-down' },
-    { label: 'Tank', value: 'tank' },
-    { label: 'Space', value: 'space' },
-    { label: 'Sailing', value: 'sailing' },
-    { label: 'Side Scroller', value: 'side-scroller' },
-    { label: 'Superhero', value: 'superhero' },
-    { label: 'Permadeath', value: 'permadeath' },
+    { label: 'Action', value: 'action' },
+    { label: 'Fantasy', value: 'fantasy' },
+    { label: 'Horror', value: 'horror' },
     { label: 'Card', value: 'card' },
     { label: 'Battle Royale', value: 'battle-royale' },
-    { label: 'MMO', value: 'mmo' },
+    { label: 'Anime', value: 'anime' },
+    { label: 'Sci-Fi', value: 'sci-fi' },
     { label: 'MMOFPS', value: 'mmofps' },
     { label: 'MMOTPS', value: 'mmotps' },
     { label: '3D', value: '3d' },
     { label: '2D', value: '2d' },
-    { label: 'Anime', value: 'anime' },
-    { label: 'Fantasy', value: 'fantasy' },
-    { label: 'Sci-Fi', value: 'sci-fi' },
-    { label: 'Fighting', value: 'fighting' },
-    { label: 'Action RPG', value: 'action-rpg' },
-    { label: 'Action', value: 'action' },
-    { label: 'Military', value: 'military' },
-    { label: 'Martial Arts', value: 'martial-arts' },
-    { label: 'Flight', value: 'flight' },
-    { label: 'Low Spec', value: 'low-spec' },
+    { label: 'Open World', value: 'open-world' },
+    { label: 'Pixel', value: 'pixel' },
+    { label: 'Sandbox', value: 'sandbox' },
+    { label: 'Top Down', value: 'top-down' },
+    { label: 'Superhero', value: 'superhero' },
     { label: 'Tower Defense', value: 'tower-defense' },
-    { label: 'Horror', value: 'horror' },
     { label: 'MMORTS', value: 'mmorts' },
   ];
 
-  // Opsi sorting
-  const sortOptions = [
-    { label: 'Default', value: '' },
-    { label: 'Release Date (Newest)', value: 'release-date-desc' },
-    { label: 'Release Date (Oldest)', value: 'release-date-asc' },
-    { label: 'Alphabetical', value: 'alphabetical' },
-    { label: 'Relevance', value: 'relevance' },
-  ];
+  const [games, setGames] = useState<GamesProps[]>([]);
+  const [filteredGames, setFilteredGames] = useState<GamesProps[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  /**
-   * Fetches the list of games from the API.
-   * Sets loading, error, and games states accordingly.
-   */
-  const getGames = async (isLoadMore: boolean = false) => {
-    if (isLoadMore) {
-      setIsLoadingMore(true);
-    } else {
-      setIsLoading(true);
-    }
+  // Fetch games dari API sesuai kategori
+  const getGames = async (category = selectedCategory) => {
+    setIsLoading(true);
     setError(null);
     try {
-      let url = `${API_URL}/games`;
-      const params = new URLSearchParams();
-      
-      // Tambahkan parameter kategori jika menggunakan API filter
-      if (useApiFilter && selectedCategory) {
-        params.append('category', selectedCategory);
-      }
-
-      // Tambahkan parameter pagination
-      params.append('page', page.toString());
-      params.append('limit', ITEMS_PER_PAGE.toString());
-
-      // Tambahkan parameter ke URL
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-
-      const response = await axios.get(url);
-      const newGames = response.data;
-      
-      if (isLoadMore) {
-        setGames(prevGames => [...prevGames, ...newGames]);
-        setFilteredGames(prevGames => [...prevGames, ...newGames]);
+      const params = [];
+      if (category && category !== '') params.push(`category=${category}`);
+      if (params.length > 0) API_URL += `?${params.join('&')}`;
+      const response = await axios.get(API_URL);
+      setGames(response.data);
+      // Filter lokal jika ada searchQuery
+      if (searchQuery.trim() !== '') {
+        const filtered = response.data.filter((game: GamesProps) =>
+          game.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
+        );
+        setFilteredGames(filtered);
       } else {
-        setGames(newGames);
-        setFilteredGames(newGames);
+        setFilteredGames(response.data);
       }
-
-      setHasMoreData(newGames.length === ITEMS_PER_PAGE);
     } catch (err) {
-      console.error("Error fetching games:", err);
-      if (axios.isAxiosError(err)) {
-        setError(err.message || "Failed to fetch games. Please check your network connection.");
-      } else {
-        setError("An unexpected error occurred.");
-      }
+      setError('Gagal memuat data');
+      setGames([]);
+      setFilteredGames([]);
     } finally {
       setIsLoading(false);
-      setIsLoadingMore(false);
       setIsRefreshing(false);
     }
   };
 
+  // Update filteredGames saat searchQuery berubah
+  useEffect(() => {
+    if (searchQuery.trim() !== '') {
+      const filtered = games.filter((game) =>
+        game.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
+      );
+      setFilteredGames(filtered);
+    } else {
+      setFilteredGames(games);
+    }
+  }, [searchQuery, games]);
+
+  useEffect(() => {
+    getGames();
+  }, [selectedCategory]);
+
   const onRefresh = useCallback(() => {
     setIsRefreshing(true);
-    setPage(1);
     getGames();
-  }, []);
+  }, [selectedCategory]);
 
-  // Fungsi untuk memfilter games berdasarkan kategori dan pencarian
-  const filterGamesByCategory = (category: string, query: string) => {
-    let filtered = games;
-    
-    // Filter berdasarkan kategori
-    if (category) {
-      filtered = filtered.filter(game => 
-        game.genre.toLowerCase().includes(category.toLowerCase())
-      );
-    }
-
-    // Filter berdasarkan pencarian
-    if (query) {
-      filtered = filtered.filter(game =>
-        game.title.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-
-    setFilteredGames(filtered);
-  };
-
-  // Tambahkan useEffect untuk memantau perubahan searchQuery
-  useEffect(() => {
-    filterGamesByCategory(selectedCategory, searchQuery);
-  }, [searchQuery, selectedCategory, games]);
-
-  // Reset pagination saat filter berubah
-  useEffect(() => {
-    setPage(1);
-    setHasMoreData(true);
-    getGames();
-  }, [useApiFilter, selectedCategory, selectedSort]);
-
-  // Fungsi untuk mengurutkan games
-  const sortGames = (sortBy: string) => {
-    let sorted = [...filteredGames];
-    
-    switch (sortBy) {
-      case 'release-date-desc':
-        sorted.sort((a, b) => new Date(b.release_date).getTime() - new Date(a.release_date).getTime());
-        break;
-      case 'release-date-asc':
-        sorted.sort((a, b) => new Date(a.release_date).getTime() - new Date(b.release_date).getTime());
-        break;
-      case 'alphabetical':
-        sorted.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case 'relevance':
-        // Implementasi relevansi bisa disesuaikan dengan kebutuhan
-        // Contoh sederhana: urutkan berdasarkan judul
-        sorted.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      default:
-        // Default: urutkan berdasarkan ID
-        sorted.sort((a, b) => Number(a.id) - Number(b.id));
-    }
-    
-    setFilteredGames(sorted);
-  };
-
-  // Fungsi untuk memuat data lebih banyak
-  const loadMoreData = () => {
-    if (!isLoadingMore && hasMoreData) {
-      setPage(prevPage => prevPage + 1);
-      getGames(true);
-    }
-  };
-
-  // useEffect untuk mengurutkan games saat sort berubah
-  useEffect(() => {
-    sortGames(selectedSort);
-  }, [selectedSort]);
-
-  // Render content based on loading, error, or data availability
+  // Render content
   const renderContent = () => {
     if (isLoading) {
       return (
-        <View style={tw`flex-1 justify-center items-center`}>
-          <ActivityIndicator size="large" color={tw.color('blue-500')} />
-          <Text style={tw`mt-2 text-gray-600`}>Loading games...</Text>
+        <View style={[tw`flex-1 justify-center items-center`, { backgroundColor: themeColors.background }]}> 
+          <ActivityIndicator size="large" color={themeColors.tint} />
+          <Text style={[tw`mt-2`, { color: themeColors.text }]}>Loading games...</Text>
         </View>
       );
     }
-
     if (error) {
       return (
         <View style={tw`flex-1 justify-center items-center p-4`}>
-          <Text style={tw`text-red-600 text-lg text-center`}>Error: {error}</Text>
+          <Text style={tw`text-red-600 text-lg text-center`}>{error}</Text>
           <TouchableOpacity
             style={tw`mt-4 bg-blue-500 p-3 rounded-lg`}
             onPress={() => getGames()}
@@ -257,21 +139,13 @@ export default function Games() {
         </View>
       );
     }
-
     if (filteredGames.length === 0) {
       return (
         <View style={tw`flex-1 justify-center items-center p-4`}>
-          <Text style={tw`text-gray-600 text-lg text-center`}>No games found.</Text>
-          <TouchableOpacity
-            style={tw`mt-4 bg-blue-500 p-3 rounded-lg`}
-            onPress={() => getGames()}
-          >
-            <Text style={tw`text-white text-base font-semibold`}>Refresh</Text>
-          </TouchableOpacity>
+          <Text style={[tw`text-lg text-center`, { color: themeColors.text }]}>No games found.</Text>
         </View>
       );
     }
-
     return (
       <FlatList
         data={filteredGames}
@@ -280,103 +154,97 @@ export default function Games() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={onRefresh}
-            colors={['#3b82f6']}
-            tintColor="#3b82f6"
+            colors={[themeColors.tint]}
+            tintColor={themeColors.tint}
           />
         }
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={tw`mb-4 bg-white p-4 rounded-lg shadow`}
+            style={[
+              tw`flex-row rounded-2xl mb-4 shadow-md`,
+              { backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff', elevation: 2 }
+            ]}
             onPress={() => router.push(`/gameDetail?id=${item.id}&title=${item.title}`)}
+            activeOpacity={0.9}
           >
-            <Text style={tw`text-xl font-semibold text-gray-900`}>{item.title}</Text>
-            <Text style={tw`text-sm text-gray-600`}>{item.genre}</Text>
-            <Text style={tw`text-sm text-gray-600`}>{item.platform}</Text>
-            <Text style={tw`text-sm text-gray-600`}>Release: {item.release_date}</Text>
-            <Text style={tw`text-sm text-gray-500 mt-2`}>{item.short_description}</Text>
-          </TouchableOpacity>
-        )}
-        onEndReached={loadMoreData}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={() => (
-          isLoadingMore ? (
-            <View style={tw`py-4`}>
-              <ActivityIndicator size="small" color={tw.color('blue-500')} />
-              <Text style={tw`text-center text-gray-600 mt-2`}>Loading more games...</Text>
+            {/* Gambar Game */}
+            {item.thumbnail ? (
+              <View style={tw`p-3`}>
+                <Image
+                  source={{ uri: item.thumbnail }}
+                  style={tw`h-20 w-20 rounded-xl`}
+                  resizeMode="cover"
+                />
+              </View>
+            ) : (
+              <View style={[tw`h-20 w-20 rounded-xl m-3 bg-gray-200 justify-center items-center`, { backgroundColor: colorScheme === 'dark' ? '#333' : '#e5e7eb' }]}/>
+            )}
+            {/* Info Game */}
+            <View style={tw`flex-1 py-3 pr-3 justify-between`}>
+              <View>
+                {/* Badge Genre */}
+                <View style={[tw`self-start px-3 py-1 rounded-full mb-1`, { backgroundColor: '#3b82f6', alignSelf: 'flex-start' }]}> 
+                  <Text style={tw`text-xs text-white font-bold`}>{item.genre}</Text>
+                </View>
+                <Text style={[tw`text-base font-semibold mb-1`, { color: themeColors.text }]} numberOfLines={2}>{item.title}</Text>
+                <Text style={[tw`text-xs mb-1`, { color: colorScheme === 'dark' ? '#aaa' : '#6b7280' }]}>{item.platform}</Text>
+                <Text style={[tw`text-xs`, { color: colorScheme === 'dark' ? '#aaa' : '#6b7280' }]}>Release: {item.release_date}</Text>
+              </View>
+              <TouchableOpacity style={tw`mt-2 flex-row items-center`} onPress={() => router.push(`/gameDetail?id=${item.id}&title=${item.title}`)}>
+                <Text style={[tw`text-sm font-medium`, { color: themeColors.tint }]}>Detail</Text>
+                <Icon name="chevron-forward" size={16} color={themeColors.tint} style={tw`ml-1`} />
+              </TouchableOpacity>
             </View>
-          ) : null
+          </TouchableOpacity>
         )}
       />
     );
   };
 
   return (
-    <SafeAreaView style={tw`flex bg-gray-100`}>
-      <View style={tw`p-4`}>
-        <View style={tw`flex-row justify-between items-center mb-4`}>
-          <Text style={tw`text-2xl font-bold text-gray-800 mb-4`}>Games</Text>
-          <Text style={tw`text-xl font-bold text-gray-800 mb-4`}>Total: {filteredGames.length}</Text>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: themeColors.background }]}> 
+      <View style={tw`flex-row items-center justify-between px-4 pt-4 mb-2`}>
+        <Text style={[tw`text-2xl font-bold`, { color: themeColors.text }]}>Games</Text>
+        <View style={[tw`px-3 py-1 rounded-full`, { backgroundColor: '#e0edff' }] }>
+          <Text style={tw`text-blue-700 font-semibold`}>Total: {games.length}</Text>
         </View>
-
-        {/* Search Section */}
-        <View style={tw`mb-4`}>
-          <TextInput
-            style={tw`bg-white p-3 rounded-lg border border-gray-200`}
-            placeholder="Cari game..."
-            value={searchQuery}
-            onChangeText={(text) => setSearchQuery(text)}
-          />
-        </View>
-
-        {/* Filter Section */}
-        <View style={tw`mb-4`}>
-          <View style={tw`flex-row justify-between items-center mb-2`}>
-            <Text style={tw`text-lg font-semibold text-gray-700`}>Filter:</Text>
-            <TouchableOpacity
-              onPress={() => setUseApiFilter(!useApiFilter)}
-              style={tw`px-3 py-1 rounded-full ${
-                useApiFilter ? 'bg-blue-500' : 'bg-gray-200'
-              }`}
-            >
-              <Text style={tw`${
-                useApiFilter ? 'text-white' : 'text-gray-700'
-              }`}>
-                {useApiFilter ? 'API Filter' : 'Local Filter'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+      </View>
+      {/* Filter Kategori */}
+      <View style={tw`px-4 mb-4`}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`px-4 mb-2`}>
           <View style={tw`flex-row gap-2`}>
-            <View style={tw`flex-1 bg-white rounded-md overflow-hidden`}>
-              <RNPickerSelect
-                onValueChange={(value) => setSelectedCategory(value)}
-                items={categories}
-                value={selectedCategory}
-                placeholder={{ label: 'Pilih Kategori', value: null }}
-                style={{
-                  inputAndroid: {
-                    padding: 12,
-                    color: '#374151',
-                  },
-                }}
-              />
-            </View>
-            <View style={tw`flex-1 bg-white rounded-md overflow-hidden`}>
-              <RNPickerSelect
-                onValueChange={(value) => setSelectedSort(value)}
-                items={sortOptions}
-                value={selectedSort}
-                placeholder={{ label: 'Urutkan', value: null }}
-                style={{
-                  inputAndroid: {
-                    padding: 12,
-                    color: '#374151',
-                  },
-                }}
-              />
-            </View>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat.value}
+                onPress={() => setSelectedCategory(cat.value)}
+                style={[tw`px-4 py-2 rounded-full mr-2`, { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20, marginRight: 8, borderWidth: selectedCategory === cat.value ? 0 : 1, borderColor: colorScheme === 'dark' ? '#333' : '#e5e7eb', backgroundColor: selectedCategory === cat.value ? themeColors.tint : (colorScheme === 'dark' ? '#23272b' : '#fff'), minWidth: 60, alignItems: 'center', justifyContent: 'center' }
+                ]}
+              >
+                <Text style={selectedCategory === cat.value
+                  ? [tw`font-medium`, { color: '#fff', fontSize: 15 }]
+                  : [{ color: themeColors.text, fontSize: 15 }]
+                }>
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        </View>
-
+        </ScrollView>
+      </View>
+      {/* Search Section */}
+      <View style={tw`px-4 mb-2`}>
+        <TextInput
+          style={[
+            tw`rounded-lg border px-4 py-2`,
+            { backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff', borderColor: colorScheme === 'dark' ? '#333' : '#e5e7eb', color: themeColors.text, fontSize: 16 }
+          ]}
+          placeholder="Cari game..."
+          placeholderTextColor={colorScheme === 'dark' ? '#aaa' : '#888'}
+          value={searchQuery}
+          onChangeText={(text) => setSearchQuery(text)}
+        />
+      </View>
+      <View style={tw`flex-1 px-2 pb-2`}>
         {renderContent()}
       </View>
     </SafeAreaView>

@@ -11,6 +11,8 @@ import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '@/constants/Colors';
 
 type MoodProps = {
   id: string;
@@ -121,6 +123,8 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isPressedRef = useRef(false);
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
 
   const categoryOptions = [
     { label: 'Senang', value: 'Senang' },
@@ -410,61 +414,42 @@ export default function Index() {
 
   if (isLoading) {
     return (
-      <View style={tw`flex-1 justify-center items-center bg-white`}>
-        <ActivityIndicator size="large" color={tw.color('blue-500')} />
-        <Text style={tw`mt-2 text-gray-600`}>Memuat data mood...</Text>
+      <View style={[tw`flex-1 justify-center items-center`, { backgroundColor: themeColors.background }]}> 
+        <ActivityIndicator size="large" color={themeColors.tint} />
+        <Text style={[tw`mt-2`, { color: themeColors.text }]}>Memuat data mood...</Text>
       </View>
     );
   }
 
   return (
     <GestureHandlerRootView>
-    <SafeAreaView style={tw`flex-1 bg-gray-50`}>
-      <LinearGradient
-        colors={['#4c669f', '#3b5998', '#192f6a']}
-        style={tw`absolute w-full h-40`}
-      />
-      <ScrollView 
-        style={tw`flex-1`} 
-        contentContainerStyle={tw`pb-4`}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            colors={['#ffffff']}
-            tintColor="#ffffff"
-          />
-        }
-      >
-        <View style={tw`p-4`}>
-          <View style={tw`flex-row items-center justify-between mb-4`}>
-            <Text style={tw`text-3xl font-bold text-white`}>Mood Tracker</Text>
-            <TouchableOpacity 
-              style={tw`bg-white/20 p-2 rounded-full`}
-              onPress={getMoods}
-            >
-              <FontAwesome name="refresh" size={20} color="white"/>
+      <SafeAreaView style={[tw`flex-1`, { backgroundColor: themeColors.background }]}> 
+        {/* Header */}
+        <View style={tw`flex-row items-center justify-between px-4 pt-4 mb-2`}>
+          <Text style={[tw`text-2xl font-bold`, { color: themeColors.text }]}>Moods</Text>
+          <View style={tw`flex-row items-center`}>
+            <View style={tw`bg-blue-100 px-3 py-1 rounded-full mr-2`}>
+              <Text style={tw`text-blue-700 font-semibold`}>Total: {mood.length}</Text>
+            </View>
+            <TouchableOpacity style={tw`p-2`} onPress={getMoods}>
+              <Icon name="refresh-outline" size={24} color={themeColors.icon} />
             </TouchableOpacity>
           </View>
-          
-          {error ? (
-            <View style={tw`bg-red-100 p-4 rounded-lg mb-4 border-l-4 border-red-500`}>
-              <Text style={tw`text-red-600`}>{error}</Text>
-            </View>
-          ) : null}
-
-          <View style={tw`bg-white/95 p-6 rounded-2xl shadow-lg mb-6 border border-gray-100`}>
+        </View>
+        {/* Notes Library (Form Input) */}
+        <View style={[tw`mx-4 mb-4 rounded-2xl shadow-lg`, { backgroundColor: colorScheme === 'dark' ? '#23272b' : '#f8fafc' }]}> 
+          <Text style={[tw`text-lg font-bold mb-2 mt-4 ml-2`, { color: themeColors.text }]}>Notes Library</Text>
+          <View style={tw`p-4 pt-0`}> 
             <TextInput
               label="Title"
               mode="outlined"
               value={title}
               onChangeText={setTitle}
-              style={tw`mb-3 bg-white`}
+              style={[tw`mb-3`, { backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff', color: themeColors.text }]}
               maxLength={255}
-              theme={{ colors: { primary: '#3b5998' } }}
+              theme={{ colors: { primary: themeColors.tint, text: themeColors.text, background: colorScheme === 'dark' ? '#23272b' : '#fff' } }}
             />
-            
-            <View style={tw`mb-3 bg-white rounded-md overflow-hidden border border-gray-200`}>
+            <View style={[tw`mb-3 rounded-md overflow-hidden border`, { borderColor: colorScheme === 'dark' ? '#333' : '#e5e7eb', backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff' }]}> 
               <RNPickerSelect
                 onValueChange={(value) => setCategory(value)}
                 items={categoryOptions}
@@ -473,31 +458,28 @@ export default function Index() {
                 style={{
                   inputAndroid: {
                     padding: 12,
-                    color: '#374151',
+                    color: themeColors.text,
+                    backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff',
                   },
                   inputIOS: {
                     padding: 12,
-                    color: '#374151',
+                    color: themeColors.text,
+                    backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff',
                   },
                 }}
               />
             </View>
-
-            <TouchableOpacity 
-              onPress={() => setShowDatePicker(true)}
-              style={tw`mb-3`}
-            >
+            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={tw`mb-3`}>
               <TextInput
                 label="Tanggal"
                 mode="outlined"
                 value={date}
                 editable={false}
-                style={tw`bg-white`}
+                style={[{ backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff', color: themeColors.text }]}
                 right={<TextInput.Icon icon="calendar" />}
-                theme={{ colors: { primary: '#3b5998' } }}
+                theme={{ colors: { primary: themeColors.tint, text: themeColors.text, background: colorScheme === 'dark' ? '#23272b' : '#fff' } }}
               />
             </TouchableOpacity>
-
             {showDatePicker && (
               <DateTimePicker
                 value={new Date(date)}
@@ -507,17 +489,15 @@ export default function Index() {
                 minimumDate={new Date()}
               />
             )}
-
             <Button
               mode="contained"
               onPress={addOrEditMood}
-              buttonColor={editingId ? '#f97316' : '#3b5998'}
+              buttonColor={editingId ? '#f97316' : themeColors.tint}
               style={tw`mt-2 rounded-lg`}
               contentStyle={tw`py-2`}
             >
               {editingId ? 'Simpan Perubahan' : 'Tambah Mood'}
             </Button>
-
             {editingId && (
               <Button
                 mode="outlined"
@@ -529,53 +509,134 @@ export default function Index() {
               </Button>
             )}
           </View>
-
-          {/* Filter Section */}
-          <View style={tw`mb-6`}>
-            <Text style={tw`text-lg font-semibold mb-3 text-gray-700`}>Filter Kategori:</Text>
-            <View style={tw`flex-row flex-wrap gap-2`}>
+        </View>
+        {/* Filter Section */}
+        <View style={tw`px-4 mb-4`}> 
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={tw`flex-row gap-2`}> 
               {filterOptions.map((option) => (
                 <TouchableOpacity
                   key={option.value}
                   onPress={() => handleFilterChange(option.value as 'Semua' | 'Senang' | 'Sedih' | 'Stress')}
-                  style={tw`px-4 py-2 rounded-full ${
-                    selectedFilter === option.value 
-                      ? 'bg-blue-500 shadow-md' 
-                      : 'bg-white shadow-sm border border-gray-200'
-                  }`}
+                  style={[tw`px-4 py-2 rounded-full mr-2`,
+                    selectedFilter === option.value
+                      ? { backgroundColor: themeColors.tint, shadowColor: themeColors.tint, shadowOpacity: 0.2, shadowRadius: 4 }
+                      : { backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff', borderWidth: 1, borderColor: colorScheme === 'dark' ? '#333' : '#e5e7eb' }
+                  ]}
                 >
-                  <Text style={tw`${
-                    selectedFilter === option.value 
-                      ? 'text-white font-medium' 
-                      : 'text-gray-700'
-                  }`}>
+                  <Text style={selectedFilter === option.value
+                    ? [tw`font-medium`, { color: '#fff' }]
+                    : [{ color: themeColors.text }]
+                  }>
                     {option.label}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
-
-          {filteredMood.map((item) => (
-            <MoodCard
-              key={item.id}
-              item={item}
-              onEdit={startEditing}
-              onDelete={deleteMood}
-              onToggleStatus={toggleStatus}
-            />
-          ))}
-
-          {filteredMood.length === 0 && (
-            <View style={tw`py-12 items-center bg-white rounded-xl shadow-sm border border-gray-100`}>
-              <Icon name="sad-outline" size={48} color={tw.color('gray-400')} />
-              <Text style={tw`text-gray-500 mt-2 text-center text-lg`}>Tidak ada data mood</Text>
+          </ScrollView>
+        </View>
+        {/* List Notes/Mood */}
+        <FlatList
+          data={filteredMood}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={tw`pb-4 px-4`}
+          ListEmptyComponent={() => (
+            <View
+              style={[
+                tw`py-12 items-center rounded-xl shadow-sm border`,
+                {
+                  backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff',
+                  borderColor: colorScheme === 'dark' ? '#333' : '#f3f4f6',
+                },
+              ]}
+            >
+              <Icon name="sad-outline" size={48} color={colorScheme === 'dark' ? '#666' : tw.color('gray-400')} />
+              <Text style={[tw`mt-2 text-center text-lg`, { color: colorScheme === 'dark' ? '#aaa' : '#6b7280' }]}>
+                Tidak ada data mood
+              </Text>
             </View>
           )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          renderItem={({ item }) => (
+            <Animated.View
+              style={[
+                tw`mb-4 p-4 rounded-xl shadow-md border`,
+                {
+                  backgroundColor: colorScheme === 'dark' ? '#23272b' : '#fff',
+                  borderColor: colorScheme === 'dark' ? '#333' : '#f3f4f6',
+                },
+              ]}
+            >
+              <TouchableOpacity activeOpacity={0.9}>
+                <View style={tw`flex-row justify-between items-start`}>
+                  <View style={tw`flex-1`}>
+                    <Text
+                      style={[
+                        tw`text-lg font-semibold`,
+                        { color: themeColors.text },
+                        item.status === 'Completed' && {
+                          textDecorationLine: 'line-through',
+                          color: colorScheme === 'dark' ? '#666' : '#a3a3a3',
+                        },
+                      ]}
+                    >
+                      {item.title}
+                    </Text>
+                    <Text style={[tw`text-xs mt-1`, { color: colorScheme === 'dark' ? '#aaa' : '#6b7280' }]}>{item.date}</Text>
+                    <View style={tw`flex-row items-center mt-2`}>
+                      <View
+                        style={[
+                          tw`px-3 py-1 rounded-full mr-2`,
+                          item.category === 'Senang'
+                            ? { backgroundColor: '#bbf7d0' }
+                            : item.category === 'Sedih'
+                            ? { backgroundColor: '#bfdbfe' }
+                            : { backgroundColor: '#fecaca' },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            tw`text-xs font-medium`,
+                            item.category === 'Senang'
+                              ? { color: '#15803d' }
+                              : item.category === 'Sedih'
+                              ? { color: '#1d4ed8' }
+                              : { color: '#b91c1c' },
+                            item.status === 'Completed' && { textDecorationLine: 'line-through' },
+                          ]}
+                        >
+                          {item.category}
+                        </Text>
+                      </View>
+                      <Text
+                        style={[
+                          tw`text-xs`,
+                          { color: colorScheme === 'dark' ? '#aaa' : '#6b7280' },
+                          item.status === 'Completed' && { textDecorationLine: 'line-through' },
+                        ]}
+                      >
+                        {item.status}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={tw`flex-row items-center`}>
+                    <TouchableOpacity onPress={() => startEditing(item)} style={tw`p-2 rounded-full bg-blue-50 mr-2`}>
+                      <Icon name="create" size={20} color={tw.color('blue-500')} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => deleteMood(item.id)} style={tw`p-2 rounded-full bg-red-50 mr-2`}>
+                      <Icon name="trash" size={20} color={tw.color('red-500')} />
+                    </TouchableOpacity>
+                    <Checkbox
+                      status={item.status === 'Completed' ? 'checked' : 'unchecked'}
+                      onPress={() => toggleStatus(item.id, item.status)}
+                      color={themeColors.tint}
+                    />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+        />
+      </SafeAreaView>
     </GestureHandlerRootView>
-
   );
 }
