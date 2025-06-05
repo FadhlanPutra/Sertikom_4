@@ -1,10 +1,9 @@
-import { View, Text, FlatList, Linking, TouchableOpacity, Image, RefreshControl, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, RefreshControl, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import tw from 'twrnc';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
@@ -29,8 +28,8 @@ export default function Explore() {
     content: string;
   };
 
-  const API_KEY = '45e121fe5c4f4a6bb7be1c2199bb09bf';
   const BASE_URL = 'https://newsapi.org/v2/top-headlines';
+  const API_KEY = '45e121fe5c4f4a6bb7be1c2199bb09bf';
 
   const categories = [
     { label: 'All', value: '' },
@@ -101,7 +100,7 @@ export default function Explore() {
                 ]}
                 >
                   <Text style={selectedCategory === cat.value
-                    ? [tw`font-medium`, { color: '#fff', fontSize: 15 }]
+                    ? [tw`font-medium`, { color: '#000', fontSize: 15 }]
                     : [{ color: themeColors.text, fontSize: 15 }]
                   }>
                     {cat.label}

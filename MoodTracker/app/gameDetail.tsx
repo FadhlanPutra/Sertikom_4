@@ -29,10 +29,6 @@ export default function GameDetail() {
   // API URL for fetching game details
   const API_URL = "https://www.freetogame.com/api";
 
-  /**
-   * Fetches the detail of a specific game from the API based on its ID.
-   * Sets loading, error, and detail states accordingly.
-   */
   const getGameDetail = async () => {
     setIsLoading(true);
     setError(null);     
@@ -41,23 +37,20 @@ export default function GameDetail() {
       setDetail(response.data);
     } catch (err) {
       console.error("Error fetching game detail:", err);
-      // Set error message based on the type of error
       if (axios.isAxiosError(err)) {
         setError(err.message || "Failed to fetch game details. Please check your network connection.");
       } else {
         setError("An unexpected error occurred.");
       }
     } finally {
-      setIsLoading(false); // Set loading to false after fetch attempt
+      setIsLoading(false);
     }
   };
 
-  // useEffect hook to call getGameDetail when the component mounts or ID changes
   useEffect(() => {
     getGameDetail();
-  }, [id]); // Dependency array includes 'id' to refetch if ID changes
+  }, [id]);
 
-  // Render content based on loading, error, or data availability
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -74,7 +67,7 @@ export default function GameDetail() {
           <Text style={tw`text-red-600 text-lg text-center`}>{error}</Text>
           <TouchableOpacity
             style={tw`mt-4 bg-blue-500 p-3 rounded-lg`}
-            onPress={getGameDetail} // Allow user to retry fetching
+            onPress={getGameDetail}
           >
             <Text style={tw`text-white text-base font-semibold`}>Retry</Text>
           </TouchableOpacity>
@@ -88,7 +81,7 @@ export default function GameDetail() {
           <Text style={[tw`text-gray-600 text-lg text-center`, { color: themeColors.text }]}>Game details not found.</Text>
           <TouchableOpacity
             style={tw`mt-4 bg-blue-500 p-3 rounded-lg`}
-            onPress={getGameDetail} // Allow user to retry fetching
+            onPress={getGameDetail}
           >
             <Text style={tw`text-white text-base font-semibold`}>Refresh</Text>
           </TouchableOpacity>
@@ -98,7 +91,6 @@ export default function GameDetail() {
 
     return (
       <ScrollView style={tw`flex-1`} contentContainerStyle={tw`p-4`}> 
-        {/* Display game thumbnail, with a fallback image if uri is not available */}
         {detail.thumbnail ? (
           <Image
             source={{ uri: detail.thumbnail }}

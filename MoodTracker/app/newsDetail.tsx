@@ -1,8 +1,7 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import tw from 'twrnc';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -23,7 +22,6 @@ type ArticleProps = {
 };
 
 export default function NewsDetail() {
-  const router = useRouter();
   const params = useLocalSearchParams();
   const [article, setArticle] = useState<ArticleProps | null>(null);
   const [isLoading, setIsLoading] = useState(true);

@@ -3,15 +3,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import tw from 'twrnc';
-import { useNavigation } from '@react-navigation/native';
-import { router, useRouter } from 'expo-router';
-import RNPickerSelect from 'react-native-picker-select';
+import { router } from 'expo-router';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import Icon from '@expo/vector-icons/Ionicons';
 
 export default function Games() {
-  // Define the type for a single game object
   type GamesProps = {
     id: string;
     title: string;
@@ -22,13 +19,11 @@ export default function Games() {
     short_description: string;
   };
 
-  // API URL for fetching free games
   let API_URL = "https://www.freetogame.com/api/games";
 
   const colorScheme = useColorScheme();
   const themeColors = Colors[colorScheme ?? 'light'];
 
-  // Kategori games (chip horizontal)
   const categories = [
     { label: 'All', value: '' },
     { label: 'MMORPG', value: 'mmorpg' },
@@ -66,7 +61,6 @@ export default function Games() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  // Fetch games dari API sesuai kategori
   const getGames = async (category = selectedCategory) => {
     setIsLoading(true);
     setError(null);
@@ -76,7 +70,7 @@ export default function Games() {
       if (params.length > 0) API_URL += `?${params.join('&')}`;
       const response = await axios.get(API_URL);
       setGames(response.data);
-      // Filter lokal jika ada searchQuery
+
       if (searchQuery.trim() !== '') {
         const filtered = response.data.filter((game: GamesProps) =>
           game.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
@@ -95,7 +89,6 @@ export default function Games() {
     }
   };
 
-  // Update filteredGames saat searchQuery berubah
   useEffect(() => {
     if (searchQuery.trim() !== '') {
       const filtered = games.filter((game) =>
@@ -116,7 +109,6 @@ export default function Games() {
     getGames();
   }, [selectedCategory]);
 
-  // Render content
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -142,7 +134,7 @@ export default function Games() {
     if (filteredGames.length === 0) {
       return (
         <View style={tw`flex-1 justify-center items-center p-4`}>
-          <Text style={[tw`text-lg text-center`, { color: themeColors.text }]}>No games found.</Text>
+          <Text style={[tw`text-lg text-center`, { color: themeColors.text }]}>Tidak ada game ditemukan.</Text>
         </View>
       );
     }
@@ -221,7 +213,7 @@ export default function Games() {
                 ]}
               >
                 <Text style={selectedCategory === cat.value
-                  ? [tw`font-medium`, { color: '#fff', fontSize: 15 }]
+                  ? [tw`font-medium`, { color: '#000', fontSize: 15 }]
                   : [{ color: themeColors.text, fontSize: 15 }]
                 }>
                   {cat.label}
